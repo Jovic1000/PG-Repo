@@ -505,9 +505,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: a6b448139d76a5542986473760d3d004, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::MazeGeneration
-  m_width: 20
-  m_height: 20
-  m_steps: 100
+  m_width: 21
+  m_height: 21
+  m_steps: 200
   m_speed: 20
   m_seed: 23
 --- !u!4 &1054959115
