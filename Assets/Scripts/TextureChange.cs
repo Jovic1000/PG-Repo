@@ -1,63 +1,100 @@
 using TreeEditor;
 using UnityEngine;
 
-public static class TextureChange
+public class TextureChange : MonoBehaviour
 {
-    public static float[,] GenerateNoiseMap(int width, int height, int seed, float scale, int octaves, float persistence, float lacunarity, Vector2 offset)
+    [Range(1, 8)] public int octaves = 1;
+
+    [Range(0f, 1f)] public float persistence = 0.5f;
+
+    [Range(1f, 4f)] public float lacunarity = 2f;
+
+    public float scale;
+
+    public void OnValidate()
     {
+        if (octaves < 1)
+        {
+            octaves = 1;
+        }
+        if (scale < 1)
+        {
+            scale = 1;
+        }
+    }
+    // heightMap = Noise.GenerateNoiseMap(mapSize, mapSize, seed, scale, octaves, persistence, lacunarity, offset); 
+
+    public static float[,] GenerateNoiseMap(
+
+    int width, int height, int seed,
+
+    float scale, int octaves, float persistence, float lacunarity, Vector2 offset)
+
+    {
+
         float[,] map = new float[width, height];
-        // GUARD scale > 0, octave >= 1
-        if (scale <= 0) scale = 1;
 
 
-        System.Random rng = new System.Random(seed);
 
-        float minHeight = float.MaxValue;
-        float maxHeight = float.MinValue;
+        // GUARD scale > 0, octaves >= 1. 
 
-        Vector2[] octaveOffsets = new Vector2[octaves];
 
-        for (int i = 0; i < octaves; i++) // offset for each octave
-        {
-            octaveOffsets[i] = new Vector2(rng.Next(1000, 10000) + offset.x,
-                                           rng.Next(1000, 10000) + offset.y);
-        }
-        for (int y = 0; y < height; y++) // loop through pixels
-        {
-            for (int x = 0; x < width; x++)
-            {
-                for (int o = 0; o < octaves - 1; o++) // loop through octaves
-                {
-                    float amplitude = 1;
-                    float frequency = 1;
-                    float noiseHeight = 0;
 
-                    float sampleX = (x - width / 2f) / scale * frequency + octaveOffsets[o].x;
-                    float sampleY = (y - height / 2f) / scale * frequency + octaveOffsets[o].y;
+        // 1. SEED: one System.Random(seed). Make an offset for EACH octave: 
 
-                    float p = Mathf.PerlinNoise(sampleX, sampleY) * 2 - 1;
-                    noiseHeight += p * amplitude;
-                    amplitude *= persistence;
-                    frequency *= lacunarity;
+        //        Vector2[] octaveOffsets = new Vector2[octaves]; 
 
-                    if (minHeight > noiseHeight) minHeight = noiseHeight;
-                    if (maxHeight < noiseHeight) maxHeight = noiseHeight;
+        //        octaveOffsets[o] = new Vector2(rng.Next(1000, 10000) + offset.x, 
 
-                    map[x, y] = noiseHeight;
-                }
-            }
-        }
-        for (int x = 0; x < width; x++)
-        {
-            for (int y = 0; y < height; y++)
-            {
-                map[x, y] = Mathf.InverseLerp(minHeight, maxHeight, map[x, y]);
-            }
-        }
+        //                                       rng.Next(1000, 10000) + offset.y); 
+
+        //    Why? Otherwise every layer samples the same place and just stacks up. 
+
+
+
+        // 2. TRACK the lowest and highest value: 
+
+        //        float minHeight = float.MaxValue;  float maxHeight = float.MinValue; 
+
+
+
+        // 3. LOOP y, then x. For each pixel: 
+
+        //        float amplitude = 1;  float frequency = 1;  float noiseHeight = 0; 
+
+        // 
+
+        //        LOOP o from 0 to octaves - 1: 
+
+        //          a. float sampleX = (x - width / 2f) / scale * frequency + octaveOffsets[o].x; 
+
+        //             float sampleY = (y - height / 2f) / scale * frequency + octaveOffsets[o].y; 
+
+        //          b. float p = Mathf.PerlinNoise(sampleX, sampleY) * 2 - 1;   // now -1 .. 1 
+
+        //          c. noiseHeight += p * amplitude; 
+
+        //          d. amplitude *= persistence;     // quieter 
+
+        //             frequency *= lacunarity;      // busier 
+
+        // 
+
+        //        Update minHeight / maxHeight, then:   map[x, y] = noiseHeight; 
+
+
+
+        // 4. NORMALISE: loop every value again: 
+
+        //        map[x, y] = Mathf.InverseLerp(minHeight, maxHeight, map[x, y]); 
+
+
 
         return map;
+
     }
-// old code for basic noise map
+}
+
 //[SerializeField] private int m_width;
 //[SerializeField] private int m_height;
 //[SerializeField] private int m_seed;
@@ -87,4 +124,3 @@ public static class TextureChange
 //    texture.Apply();
 //    GetComponent<Renderer>().material.mainTexture = texture;
 //}
-}
