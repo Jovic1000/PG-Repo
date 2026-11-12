@@ -10,14 +10,9 @@ public class MazeGeneration : MonoBehaviour
     [SerializeField] private int m_speed;
     [SerializeField] private int m_seed;
 
-    
-
     private bool[,] m_maze;
 
-    private GameObject m_mike;
-
     private Movements m_movement;
-
     private System.Random m_rand;
 
     private enum Movements
@@ -28,153 +23,103 @@ public class MazeGeneration : MonoBehaviour
         RIGHT
     }
 
-   /* private void CreateAncorPoints()
-    { 
-        // loops through the stack and adds a anchor for every second square within the boundries
-        for (int y = 0; y < m_height; y++)
-        {
-            for (int x = 0; x < m_width; x++)
-            {
-                if (x != m_width && x != 0)
-                {
-                    if (y != m_height && y != 0)
-                    {
-                        // creates a temp object for testing
-                        GameObject sphere = GameObject.CreatePrimitive(PrimitiveType.Sphere);
-                        sphere.transform.position = new Vector3(x, y);
-                        sphere.GetComponent<Renderer>().material.color = Color.purple;
-                        //-------------------------------------------------------------
-
-
-                        m_ancors.Push(new Vector2(x, y));
-                        x++;
-                    }
-                }
-            }
-            // adds one to hight so it skips a line keeping the anchors 1 space apart
-            if (y != m_height && y != 0)
-            {
-                y++;
-            }
-        }
-    }*/
-
     private void DrawSteps()
     {
-        Stack<Vector2> m_ancors = new();
+        List<Vector2> m_ancors = new();
 
         // the vector carver that will carve out the maze
         Vector2 m_carver = new Vector2(1, 1);
         Vector2 m_priorPosition = new();
 
-        int runs = 0;
-
-        m_ancors.Push(new Vector2(m_carver.x, m_carver.y));
+        m_ancors.Add(new Vector2(m_carver.x, m_carver.y));
         Movements m_movement = new();
+
+        int m_length = 0;
 
         while (m_steps > 0)
         {
-            bool m_passMoveCheck = false;
+            Vector2 newPosition = new Vector2(0, 0);
+            bool move = false;
+            int loop = 0;
 
-            while (!m_passMoveCheck)
-            {
-                int random = m_rand.Next(0, 4);
-                bool cantMove1 = false;
-                bool cantMove2 = false;
-                bool cantMove3 = false;
-                bool cantMove4 = false;
+            while (!move) {
 
-                //loops through all possible paths and chooses the only available one
-                if (random == 2 && !(((int)m_carver.x - 2, (int)m_carver.y) == ((int)m_priorPosition.x, (int)m_priorPosition.y)))
+                int tempNum = m_rand.Next(0, 4);
+                m_movement = (Movements)tempNum;
+
+                // decidedes which direction the maze will be carved out by the vector
+                switch (m_movement)
                 {
-                    if (!(m_carver.x - 2 <= 1))
-                    {
-                        m_passMoveCheck = true;
-                        m_movement = Movements.LEFT;
-                        m_priorPosition = m_ancors.Peek();
-                        m_ancors.Push(new Vector2(m_carver.x, m_carver.y));
-                    }
-                    else
-                    {
-                        cantMove1 = true;
-                    }
-                }
-                else if (random == 3 && !(((int)m_carver.x + 2, (int)m_carver.y) == ((int)m_priorPosition.x, (int)m_priorPosition.y)))
-                {
-                    if (!(m_carver.x + 2 >= m_width))
-                    {
-                        m_passMoveCheck = true;
-                        m_movement = Movements.RIGHT;
-                        m_priorPosition = m_ancors.Peek();
-                        m_ancors.Push(new Vector2(m_carver.x, m_carver.y));
-                    }
-                    else 
-                    { 
-                        cantMove2 = true; 
-                    }
-                }
-                else if (random == 0 && !(((int)m_carver.x, (int)m_carver.y + 2) == ((int)m_priorPosition.x, (int)m_priorPosition.y)))
-                {
-                    if (!(m_carver.y + 2 >= m_height))
-                    {
-                        m_passMoveCheck = true;
-                        m_movement = Movements.UP;
-                        m_priorPosition = m_ancors.Peek();
-                        m_ancors.Push(new Vector2(m_carver.x, m_carver.y));
-                    }
-                    else
-                    {
-                        cantMove3 = true;
-                    }
-                }
-                else if (random == 1 && !(((int)m_carver.x, (int)m_carver.y - 2) == ((int)m_priorPosition.x, (int)m_priorPosition.y)))
-                {
-                    if (!(m_carver.y - 2 <= 1))
-                    {
-                        m_passMoveCheck = true;
-                        m_movement = Movements.DOWN;
-                        m_priorPosition = m_ancors.Peek();
-                        m_ancors.Push(new Vector2(m_carver.x, m_carver.y));
-                    }
-                    else
-                    {
-                        cantMove4 = true;
-                    }
-                }
-                
-                if (cantMove1 && cantMove2 && cantMove3 && cantMove4)
-                {
-                    m_priorPosition = m_ancors.Peek();
-                    m_ancors.Pop();
-                    m_carver = m_ancors.Peek();
+                    case Movements.UP:
+                        newPosition = new Vector2(m_carver.x, m_carver.y + 2);
+                        break;
+                    case Movements.DOWN:
+                        newPosition = new Vector2(m_carver.x, m_carver.y - 2);
+                        break;
+                    case Movements.LEFT:
+                        newPosition = new Vector2(m_carver.x - 2, m_carver.y);
+                        break;
+                    case Movements.RIGHT:
+                        newPosition = new Vector2(m_carver.x + 2, m_carver.y);
+                        break;
+                    default:
+                        Debug.Log("Cannot Find Movement Enum");
+                        break;
                 }
 
+                // checks if the player has been to an old position and stops them from going back
+                for (int i = 0; i < m_ancors.Count; i++)
+                {
+
+                    if (!(newPosition == m_ancors[i]) && newPosition.x > 0 && newPosition.y > 0 &&
+                        newPosition.x < m_width && newPosition.y < m_height)
+                    {
+                        m_priorPosition = m_carver;
+                        move = true;
+                    }
+                    else if (i == m_ancors.Count)
+                    {
+                        newPosition = m_priorPosition;
+                        m_priorPosition = m_carver;
+                        move = true;
+                    }
+                }
+
+                Debug.Log("loop " + loop++);
+
+                if (loop == 9)
+                {
+                    Debug.Log("pause");
+                }
             }
 
-            // decidedes which direction the maze will be carved out by the vector
-            switch (m_movement)
+            float movedX = 0;
+            float movedY = 0;
+
+            //gets the space between new position and the carver
+            if (m_carver.x < newPosition.x)
             {
-                case Movements.UP:
-                    m_carver = new Vector2(m_carver.x, m_carver.y + 2);
-                    m_maze[(int)m_carver.x, (int)m_carver.y - 1] = true;
-                    break;
-                case Movements.DOWN:
-                    m_carver = new Vector2(m_carver.x, m_carver.y - 2);
-                    m_maze[(int)m_carver.x, (int)m_carver.y + 1] = true;
-                    break;
-                case Movements.LEFT:
-                    m_carver = new Vector2(m_carver.x - 2, m_carver.y);
-                    m_maze[(int)m_carver.x + 1, (int)m_carver.y] = true;
-                    break;
-                case Movements.RIGHT:
-                    m_carver = new Vector2(m_carver.x + 2, m_carver.y);
-                    m_maze[(int)m_carver.x - 1, (int)m_carver.y] = true;
-                    break;
-                default:
-                    break;
+                movedX = 1;
+            }
+            else if (!(m_carver.x == newPosition.x))
+            {
+                movedX = -1;
             }
 
-            Debug.Log(++runs);
+            if (m_carver.y < newPosition.y)
+            {
+                movedY = 1;
+            }
+            else if (!(m_carver.y == newPosition.y))
+            {
+                movedY = -1;
+            }
+
+            Vector2 newPath = new Vector2(m_carver.x + movedX, m_carver.y + movedY);
+
+            m_maze[(int)newPath.x, (int)newPath.y] = true;
+            m_carver = newPosition;
+
             m_maze[(int)m_carver.x, (int)m_carver.y] = true;
 
             m_steps--;

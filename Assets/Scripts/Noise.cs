@@ -2,8 +2,10 @@ using UnityEngine;
 
 public static class Noise
 {
+
     public static float[,] GenerateNoiseMap(int width, int height, int seed, float scale, int octaves, float persistence, float lacunarity, Vector2 offset)
     {
+
         float[,] map = new float[width, height];
         System.Random rand = new System.Random(seed);
         Vector2[] octaveOffsets = new Vector2[octaves];
@@ -23,11 +25,12 @@ public static class Noise
             for (int y = 0; y < height; y++)
             {
                 //LOOP o from 0 to octaves - 1: 
+                float amplitude = 1;
+                float frequency = 1;
+                float noiseHeight = 0;
+
                 for (int o = 0; o < octaves; o++)
                 {
-                    float amplitude = 1;
-                    float frequency = 1;
-                    float noiseHeight = 0;
 
                     float sampleX = (x - width / 2f) / scale * frequency + octaveOffsets[o].x;
 
@@ -41,11 +44,11 @@ public static class Noise
 
                     frequency *= lacunarity;      // busier 
 
-                    if (minHeight > noiseHeight) minHeight = noiseHeight;
-                    if (maxHeight < noiseHeight) maxHeight = noiseHeight;
-
-                    map[x, y] = noiseHeight;
                 }
+                if (minHeight > noiseHeight) minHeight = noiseHeight;
+                if (maxHeight < noiseHeight) maxHeight = noiseHeight;
+
+                map[x, y] = noiseHeight;
             }
         }
 
@@ -64,4 +67,6 @@ public static class Noise
         return map;
 
     }
+
+    
 }

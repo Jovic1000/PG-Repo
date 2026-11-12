@@ -4,6 +4,20 @@ public class TextureChange : MonoBehaviour
 {
     // heightMap = Noise.GenerateNoiseMap(mapSize, mapSize, seed, scale, octaves, persistence, lacunarity, offset); 
 
+    [System.Serializable]
+
+    public struct TerrainType
+    {
+        public string name;
+        public float height;    // this band goes UP TO this height 
+        public Color color;
+    }
+
+    public TerrainType[] regions;    // fill this in the Inspector, LOWEST first 
+    public enum DrawMode { NoiseMap, ColourMap, FalloffMap }
+    public DrawMode drawMode = DrawMode.NoiseMap;
+
+
     [Range(1, 8)] public int octaves;
     [Range(0f, 1f)] public float persistence;
     [Range(1f, 4f)] public float lacunarity;
@@ -15,14 +29,14 @@ public class TextureChange : MonoBehaviour
 
     public void OnValidate()
     {
-        if (octaves < 1) {octaves = 1;}
-        if (persistence < 0.5f) {persistence = 0.5f;}
-        if (lacunarity < 2f) {lacunarity = 2f;}
+        if (octaves < 1) { octaves = 1; }
+        if (persistence < 0.5f) { persistence = 0.5f; }
+        if (lacunarity < 2f) { lacunarity = 2f; }
+        if (m_scale <= 0f) { m_scale = 0.0001f; }
     }
 
     private void Start()
     {
-        m_scale = m_scale / 100;
         System.Random r = new System.Random(m_seed);
         Texture2D texture = new(m_width, m_height);
         texture.filterMode = FilterMode.Point;
