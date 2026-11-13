@@ -18,7 +18,7 @@ public static class MeshGenerator
         {
             for (int x = 0; x < m_width; x++) 
             {
-                data.vertices[vertexIndex] = new Vector3(offsetX + x, 0, offsetZ + y);
+                data.vertices[vertexIndex] = new Vector3(offsetX + x, heightMap[x, y] * heightMultiplier, offsetZ + y);
                 data.uvs[vertexIndex] = new Vector2(x / (float)(m_width - 1), y / (float)(m_height - 1));
 
                 if (x < m_width - 1 && y < m_height - 1)
@@ -32,9 +32,6 @@ public static class MeshGenerator
             }
         }
 
-        // 5. HILLS (C3): replace the 0 in (a) with   heightMap[x, y] * heightMultiplier
-
-        // 6. RETURN the MeshData.
         return data;
     }
 }

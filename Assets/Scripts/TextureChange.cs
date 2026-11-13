@@ -3,17 +3,6 @@ using UnityEngine;
 public class TextureChange : MonoBehaviour
 {
     // heightMap = Noise.GenerateNoiseMap(mapSize, mapSize, seed, scale, octaves, persistence, lacunarity, offset); 
-
-    [System.Serializable]
-
-    public struct TerrainType
-    {
-        public string name;
-        public float height;    // this band goes UP TO this height 
-        public Color color;
-    }
-
-    public TerrainType[] regions;    // fill this in the Inspector, LOWEST first 
     public enum DrawMode { NoiseMap, ColourMap, FalloffMap }
     public DrawMode drawMode = DrawMode.NoiseMap;
 
@@ -35,19 +24,16 @@ public class TextureChange : MonoBehaviour
         if (m_scale <= 0f) { m_scale = 0.0001f; }
     }
 
-    private void Start()
+    public Texture2D CreateNoiseTexture(float[,] noiseMap)
     {
-        System.Random r = new System.Random(m_seed);
-        Texture2D texture = new(m_width, m_height);
+        Texture2D texture = new(noiseMap.GetLength(0), noiseMap.GetLength(1));
         texture.filterMode = FilterMode.Point;
 
         // sets idavidual pixel colour when iterating
 
-        float[,] z = Noise.GenerateNoiseMap(m_width, m_height, m_seed, m_scale, octaves, persistence, lacunarity, new Vector2(2, 2));
-
-        for (int i = 0; i < m_width; i++)
+        for (int i = 0; i < texture.width; i++)
         {
-            for (int j = 0; j < m_height; j++)
+            for (int j = 0; j < texture.height; j++)
             {
                 //creates a noise map \/ \/ \/
                 //float v = Mathf.PerlinNoise(((float)i / m_width + m_seed) / m_scale, ((float)j / m_height + m_seed) / m_scale);
@@ -55,14 +41,13 @@ public class TextureChange : MonoBehaviour
                 // create white noise \/ \/ \/
                 //float v = (float)r.NextDouble();
 
-                float v = z[i, j];
-
+                float v = noiseMap[i, j];
 
                 texture.SetPixel(i, j, new Color(v, v, v));
             }
         }
 
         texture.Apply();
-        GetComponent<Renderer>().material.mainTexture = texture;
+        return texture;
     }
 }
