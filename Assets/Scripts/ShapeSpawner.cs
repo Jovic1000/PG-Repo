@@ -56,6 +56,8 @@ public class ShapeSpawner : MonoBehaviour
 
         Texture2D texture = changer.CreateNoiseTexture(m_noiseMap);
 
+        GenerateColour(m_noiseMap, texture);
+
         GetComponent<MeshRenderer>().sharedMaterial.mainTexture = texture;
 
         GetComponent<MeshFilter>().mesh = data.CreateMesh();
@@ -74,6 +76,7 @@ public class ShapeSpawner : MonoBehaviour
                 texture.SetPixel(i, j, colorMap);
             }
         }
+        texture.Apply();
     }
 
     private Color CheckColorHeight(float height)
