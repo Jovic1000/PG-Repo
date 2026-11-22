@@ -5,8 +5,8 @@ using Unity.VisualScripting;    // at the top: List and Queue
 public class Caveing : MonoBehaviour
 {
  
-    public bool showOutline = true;
-    public bool keepLargestCavern = true;
+    public bool showOutline;
+    public bool keepLargestCavern;
 
     private int[,] m_map;
 
@@ -20,8 +20,8 @@ public class Caveing : MonoBehaviour
 
     private void OnValidate()
     {
-        transform.localScale = new Vector3(m_width, m_height, 0.1f);
-        transform.position = new Vector3 ((m_width  - 1f) / 2f, (m_height - 1f) / 2);
+        transform.localScale = new Vector3(m_width, 0, m_height);
+        transform.position = new Vector3 ((m_width  - 1f) / 2f, 0f, (m_height - 1f) / 2);
         Generate();
     }
 
@@ -78,7 +78,7 @@ public class Caveing : MonoBehaviour
             KeepLargestCavern();
         }
 
-        GetComponent<MeshRenderer>().material.mainTexture = IMGtool.BoolToTextureMap(m_map);
+        GetComponent<MeshRenderer>().sharedMaterial.mainTexture = IMGtool.IntToTextureMap(m_map);
     }
 
     public void GenerateMap()
@@ -285,7 +285,7 @@ public class Caveing : MonoBehaviour
 
 public static class IMGtool
 {
-    public static Texture2D BoolToTextureMap(int[,] noiseMap)
+    public static Texture2D IntToTextureMap(int[,] noiseMap)
     {
         Texture2D texture = new(noiseMap.GetLength(0), noiseMap.GetLength(1));
         texture.filterMode = FilterMode.Point;

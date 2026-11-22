@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using Unity.VisualScripting;
 using UnityEngine;
 
 [RequireComponent(typeof(MeshFilter), typeof(MeshRenderer), typeof(MeshCollider))]
@@ -48,13 +49,19 @@ public class CaveWalls : MonoBehaviour
         int s = vertices.Count;              // number of the first new vertex
         Vector3 up = Vector3.up * wallHeight;
 
-        // s      bottom of 'from'
+        // s      bottom of 'from' 
+        vertices.Add(from);
         // s + 1  top of 'from'
+        vertices.Add(from + up);
         // s + 2  top of 'to'
+        vertices.Add(to); // s - bottom of 'from'
         // s + 3  bottom of 'to'
+        vertices.Add(to + up); // s + 1 - top of 'from'
 
         // triangle 1: s, s + 1, s + 2
+        triangles.Add(s); triangles.Add(s + 1); triangles.Add(s + 2);
         // triangle 2: s, s + 2, s + 3
+        triangles.Add(s + 1); triangles.Add(s + 3); triangles.Add(s + 2);
     }
 
     void AddCaseWalls(int c, Vector3 b, Vector3 r, Vector3 t, Vector3 l)
@@ -66,21 +73,21 @@ public class CaveWalls : MonoBehaviour
         switch (c)
         {
             case 1:case 14:
-                Gizmos.DrawLine(b, l); break;
+                AddWall(b, l); break;
             case 2:case 13:
-                Gizmos.DrawLine(b, r); break;
+                AddWall(b, r); break;
             case 3:case 12:
-                Gizmos.DrawLine(r, l); break;
+                AddWall(r, l); break;
             case 4:case 11:
-                Gizmos.DrawLine(t, r); break;
+                AddWall(t, r); break;
             case 5:
-                Gizmos.DrawLine(l, t); Gizmos.DrawLine(b, r); break;
+                AddWall(l, t); AddWall(b, r); break;
             case 6:case 9:
-                Gizmos.DrawLine(t, b); break;
+                AddWall(t, b); break;
             case 7:case 8:
-                Gizmos.DrawLine(t, l); break;
+                AddWall(t, l); break;
             case 10:
-                Gizmos.DrawLine(t, l); Gizmos.DrawLine(b, r); break;
+                AddWall(t, l); AddWall(b, r); break;
 
             default:
                 break;
@@ -97,10 +104,22 @@ public class CaveWalls : MonoBehaviour
         }
 
         mesh.Clear();
+
         // 3. vertices and triangles into the mesh (.ToArray())
-        // 4. mesh.RecalculateNormals();
-        // 5. GetComponent<MeshFilter>().sharedMesh = mesh;
+        mesh.vertices = vertices.ToArray();
+        mesh.triangles = triangles.ToArray();
+
+        mesh.RecalculateNormals();
+        GetComponent<MeshFilter>().sharedMesh = mesh;
+
         // 6. the MeshCollider: set its sharedMesh to null, then to mesh
+        GetComponent<MeshCollider>().sharedMesh = null;
+        GetComponent<MeshCollider>().sharedMesh = mesh;
+    }
+
+    private void Start()
+    {
+        BuildWalls();
     }
 
 }
