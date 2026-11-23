@@ -20,9 +20,11 @@ public class Caveing : MonoBehaviour
 
     private void OnValidate()
     {
-        transform.localScale = new Vector3(m_width, 0, m_height);
-        transform.position = new Vector3 ((m_width  - 1f) / 2f, 0f, (m_height - 1f) / 2);
+        transform.localScale = new Vector3(m_width, m_height, 0.1f);
+        transform.position = new Vector3 ((m_width  - 1f) / 2f, (m_height - 1f) / 2);
+
         Generate();
+        Debug.Log("Validated"); // outputs to console that the assets have successfully valadated
     }
 
     // Start is called once before the first execution of Update after the MonoBehaviour is created

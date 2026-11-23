@@ -41,7 +41,8 @@ public class CaveWalls : MonoBehaviour
             }
         }
 
-      ApplyMesh();
+        ApplyMesh();
+        GetComponent<Transform>().position = new Vector3(0, 0, 0);
     }
 
     void AddWall(Vector3 from, Vector3 to)
