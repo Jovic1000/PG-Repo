@@ -2,7 +2,7 @@ using UnityEngine;
 using System.Collections.Generic;
 using Unity.VisualScripting;    // at the top: List and Queue
 
-public class Caveing : MonoBehaviour
+public class Caving : MonoBehaviour
 {
  
     public bool showOutline;

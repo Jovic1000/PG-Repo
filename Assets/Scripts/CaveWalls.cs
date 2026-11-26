@@ -5,122 +5,84 @@ using UnityEngine;
 [RequireComponent(typeof(MeshFilter), typeof(MeshRenderer), typeof(MeshCollider))]
 public class CaveWalls : MonoBehaviour
 {
-    public Caveing cave = new Caveing();
+    public Caving cave;
     [Range(1f, 10f)] public float wallHeight = 3f;
+    List<Vector3> vertices = new();
+    List<int> triangles = new();
 
-    List<Vector3> vertices = new List<Vector3>();
-    List<int> triangles = new List<int>();
-    Mesh mesh;
+    private MeshCollider collider;
+    private Mesh mesh;
 
-    [ContextMenu("Build walls")]
+    [ContextMenu("Build Walls")]
     public void BuildWalls()
     {
-        if (cave == null || cave.GetMap() == null)
-        {
-            return;
-        }
+        if (cave == null || cave.GetMap() == null) return;
+        vertices.Clear();
+        triangles.Clear();
 
-        // 2. clear both lists --> optional (use for constant changing walls)
-
-        // 3. loop x from 0 to cave.width - 2, then y from 0 to cave.height - 2
         for (int x = 0; x < cave.GetWidth() - 2; x++)
         {
             for (int y = 0; y < cave.GetHeight() - 2; y++)
             {
-                 //the case for this square
-                 //the four midpoints ON THE FLOOR, for example:
-
                 int c = cave.GetCaseIndex(x, y);
 
-                Vector3 b = new Vector3(x + 0.5f, 0, y);
-                Vector3 r = new Vector3(x + 1f, y + 0.5f);
-                Vector3 t = new Vector3(x + 0.5f, y + 1f);
-                Vector3 l = new Vector3(x, y + 0.5f);
-
-                AddCaseWalls(c, b, r, t, l);
+                Vector3 bottom = new(x + 0.5f, wallHeight, y);
+                Vector3 right = new(x + 1, wallHeight, y + 0.5f);
+                Vector3 top = new(x + 0.5f, wallHeight, y + 1);
+                Vector3 left = new(x, wallHeight, y + 0.5f);
+                AddCaseWalls(c, bottom, right, top, left);
             }
         }
-
         ApplyMesh();
-        GetComponent<Transform>().position = new Vector3(0, 0, 0);
     }
 
     void AddWall(Vector3 from, Vector3 to)
     {
-        int s = vertices.Count;              // number of the first new vertex
+        int s = vertices.Count; // number of the first new vertex
         Vector3 up = Vector3.up * wallHeight;
 
-        // s      bottom of 'from' 
-        vertices.Add(from);
-        // s + 1  top of 'from'
-        vertices.Add(from + up);
-        // s + 2  top of 'to'
+        vertices.Add(from); // s - bottom of 'from'
+        vertices.Add(from + up); // s + 1 - top of 'from'
+
         vertices.Add(to); // s - bottom of 'from'
-        // s + 3  bottom of 'to'
         vertices.Add(to + up); // s + 1 - top of 'from'
 
-        // triangle 1: s, s + 1, s + 2
         triangles.Add(s); triangles.Add(s + 1); triangles.Add(s + 2);
-        // triangle 2: s, s + 2, s + 3
         triangles.Add(s + 1); triangles.Add(s + 3); triangles.Add(s + 2);
     }
 
-    void AddCaseWalls(int c, Vector3 b, Vector3 r, Vector3 t, Vector3 l)
+    void AddCaseWalls(int c, Vector3 bottom, Vector3 right, Vector3 top, Vector3 left)
     {
-        // every other case from your arrow table, one per line
-        // case 5 and case 10: two AddWall calls each
-        // 0 and 15: nothing
-
         switch (c)
         {
-            case 1:case 14:
-                AddWall(b, l); break;
-            case 2:case 13:
-                AddWall(b, r); break;
-            case 3:case 12:
-                AddWall(r, l); break;
-            case 4:case 11:
-                AddWall(t, r); break;
-            case 5:
-                AddWall(l, t); AddWall(b, r); break;
-            case 6:case 9:
-                AddWall(t, b); break;
-            case 7:case 8:
-                AddWall(t, l); break;
-            case 10:
-                AddWall(t, l); AddWall(b, r); break;
-
-            default:
-                break;
+            case 1: AddWall(bottom, left); break;
+            case 2: AddWall(right, bottom); break;
+            case 3: AddWall(right, left); break;
+            case 4: AddWall(top, right); break;
+            case 5: AddWall(left, top); AddWall(right, bottom); break;
+            case 6: AddWall(top, bottom); break;
+            case 7: AddWall(top, left); break;
+            case 8: AddWall(left, top); break;
+            case 9: AddWall(bottom, top); break;
+            case 10: AddWall(right, top); AddWall(left, bottom); break;
+            case 11: AddWall(right, top); break;
+            case 12: AddWall(left, right); break;
+            case 13: AddWall(bottom, right); break;
+            case 14: AddWall(left, bottom); break;
         }
     }
 
     void ApplyMesh()
     {
-        // 1. if mesh is null: make a new Mesh and give it a name
-
-        if (mesh == null)
-        {
-            mesh = new Mesh();
-        }
-
+        if (mesh == null) { mesh = new() { name = "Cave Walls" }; } // make new mesh if none available
         mesh.Clear();
-
-        // 3. vertices and triangles into the mesh (.ToArray())
         mesh.vertices = vertices.ToArray();
         mesh.triangles = triangles.ToArray();
-
         mesh.RecalculateNormals();
+
         GetComponent<MeshFilter>().sharedMesh = mesh;
-
-        // 6. the MeshCollider: set its sharedMesh to null, then to mesh
-        GetComponent<MeshCollider>().sharedMesh = null;
-        GetComponent<MeshCollider>().sharedMesh = mesh;
+        collider = GetComponent<MeshCollider>();
+        collider.sharedMesh = null; // let go of the old shape
+        collider.sharedMesh = mesh; // rebuild the new mesh
     }
-
-    private void Start()
-    {
-        BuildWalls();
-    }
-
 }

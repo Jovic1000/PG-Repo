@@ -1,114 +1,166 @@
-
-using System.CodeDom.Compiler;
 using System.Collections.Generic;
-using Unity.VisualScripting;
-using UnityEditor;
+using System.Linq;
 using UnityEngine;
-
 
 public class Tree : MonoBehaviour
 {
-    public List<LSyestemRule> rules = new List<LSyestemRule>();
+    public string axiom = "A";
+    public List<LSystemRule> rules = new List<LSystemRule>();
+    [Range(0, 7)]public int iterations = 3;
+    public int seed = 23;
 
-    [SerializeField] private string axiom;
-    [SerializeField] private int iterations;
-    [SerializeField] private int seed;
-    [SerializeField] private bool drawGizmo;
+    readonly List<Vector3> starts = new();
+    readonly List<Vector3> ends = new();
+    readonly List<Vector3> leaves = new();
 
-    Vector3 m_basePosition = new Vector3(0, 0, 0);
-    Vector3 m_rotation = new Vector3(0, 0, 0);
-    float angle = 45;
-    string current;
+    string sentence = string.Empty;
 
+    public float length = 3f;
+    public int angle = 90;
+    [Range(0f, 180f)] public float rollAngle = 120f;
+
+    [Header("Prefabs")]
+    public GameObject branchPrefab;
+    public GameObject leafPrefab;
+
+    public GameObject parts;
+    public GameObject tree;
+
+    public float branchWidth = 0.5f;
+    public float leafSize = 1f;
+
+    [ContextMenu("Generate")]
+    public void Generate()
+    {
+        var watch = System.Diagnostics.Stopwatch.StartNew();
+        sentence = LSystem.Generate(axiom, rules, iterations, seed);
+        CreateTreeLines();
+        BuildParts();
+        Debug.Log(sentence.Length + " symbols, " + watch.ElapsedMilliseconds + " ms");
+        Debug.Log(sentence);
+    }
+
+    void CreateTreeLines()
+    {
+        starts.Clear();
+        ends.Clear();
+        leaves.Clear();
+        Vector3 pos = Vector3.zero;
+        Quaternion rot = Quaternion.identity;
+        Stack<Vector3> storedPos = new();
+        Stack<Quaternion> storedRot = new();
+
+        // GOAL - remove end points that match up with start positions
+        // need to check if the end points are valid spawn points for leaves
+        // if end point is in the same place as start point - remove end point
+
+        foreach(char c in sentence)
+        {
+            switch (c) 
+            {
+                case 'F': // move forward
+                    Vector3 end = pos + (rot * Vector3.up) * length;
+                    starts.Add(pos);
+                    ends.Add(end);
+                    pos = end;
+                    break;
+                case '+': // turn left                   
+                    rot *= Quaternion.Euler(0, 0, angle);
+                    break;
+                case '-': // turn right
+                    rot *= Quaternion.Euler(0, 0, -angle);
+                    break;
+                case '[': // save pos and rot
+                    storedPos.Push(pos);
+                    storedRot.Push(rot);
+                    break;
+                case ']': // revert to last pos and rot
+                    if (storedPos.Count <= 0 && storedRot.Count <= 0) { return; }
+                    pos = storedPos.Pop();
+                    rot = storedRot.Pop();
+                    break;
+                case '/':
+                    rot *= Quaternion.Euler(0, rollAngle, 0);
+                    break;
+                case 'X':
+                    leaves.Add(pos);
+                    break;
+            }
+        }
+        Debug.Log(starts.Count + " Lines");
+    }
     private void OnDrawGizmos()
     {
-        if (drawGizmo)
+        Gizmos.color = Color.blue;
+        // for every line
+        for (int i = 0; i < starts.Count; i++)
         {
-            current = LSystem.Generate(axiom, rules, iterations, seed);
-
-            foreach (char c in current)
-            {
-                Vector3 priorPosition = m_basePosition;
-                switch (c)
-                {
-                    case 'F':
-                    case 'X':
-                        m_basePosition += new Vector3(0, 1, 0);
-                        break;
-
-                    case '-':
-                        m_rotation += new Vector3(0, 0, -angle);
-                        break;
-
-                    case '+':
-                        m_rotation += new Vector3(0, 0, angle);
-                        break;
-
-                    default:
-                        break;
-                }
-
-                Gizmos.DrawLine(priorPosition, m_basePosition + m_rotation);
-            }
+            Gizmos.DrawLine(transform.position + starts[i], transform.position + ends[i]);
         }
     }
-}
 
-[System.Serializable]
-public class LSyestemRule
-{
-    public char symbol; // the symble to replace: F
-    public string replacement; // what it becomes: FF
-
-
-}
-
-public static class LSystem
-{
-    public static string Generate (string axiom, List<LSyestemRule> rules, int iterations, int seed)
+    void PlaceBranch(int i)
     {
-        string current = axiom;
-        
+        Vector3 direction = ends[i] - starts[i];
+        Transform t = Instantiate(branchPrefab, tree.transform).transform;
 
-        for (int i = 0; i < iterations; i++)
-        {
-            // a NEW string: never change the one Your Reading
-            string next = "";
+        t.localPosition = (starts[i] + ends[i]) / 2f;                           // the middle
+        t.localRotation = Quaternion.FromToRotation(Vector3.up, direction);     // point along the line
+        t.localScale = new(branchWidth, direction.magnitude / 2f, branchWidth); // thin and long
 
-            foreach (char c in current)
-            {
-
-                // add what c becomes to the end of next:
-                next += Replace(c, rules);
-
-            }
-
-            // Swap: current becomes next
-            current = next;
-        }
-
-      
-
-
-        Debug.Log("Current: " + current);
-        return current;
     }
 
-    static string Replace(char c, List<LSyestemRule> rules)
+    void PlaceLeaves(Vector3 leafPos)
     {
-        // look at every rule:
-        //    if its symbol is c, return its replacement
-        for (int i = 0; i < rules.Count; i++)
+        Transform l = Instantiate(leafPrefab, parts.transform).transform;
+        l.localPosition = leafPos;
+        l.localScale = Vector3.one * leafSize;
+    }
+
+    public void BuildParts()
+    {
+        ClearChildren();
+        // for every leaf position - Instantiate leafPrefab in parts object
+        // for every end point - make leaf
+        for (int i = 0; i < starts.Count; i++)
         {
-            if (c == rules[i].symbol)
-            { 
-                return rules[i].replacement;
+            PlaceBranch(i);
+        }
+        foreach (var leaf in leaves)
+        {
+            PlaceLeaves(leaf);
+        }
+
+        Debug.Log("Created Branches and Leaves");
+    }
+
+    [ContextMenu("Clear Children")]
+    public void ClearChildren()
+    {
+        // leaf children
+        while (parts.transform.childCount > 0)
+        {
+            if (Application.isPlaying)
+            {
+                Destroy(parts.transform.GetChild(0).gameObject);
+            }
+            else
+            {
+                DestroyImmediate(parts.transform.GetChild(0).gameObject);
             }
         }
 
-        // no rule matched: c is a constant
-
-        return "Missing string";
+        // tree children
+        while(tree.transform.childCount > 0)
+        {
+            if (Application.isPlaying)
+            {
+                Destroy(tree.transform.GetChild(0).gameObject);
+            }
+            else
+            {
+                DestroyImmediate(tree.transform.GetChild(0).gameObject);
+            }
+        }
     }
-
 }
