@@ -13,6 +13,8 @@ public class CaveWalls : MonoBehaviour
     private MeshCollider collider;
     private Mesh mesh;
 
+    
+
     [ContextMenu("Build Walls")]
     public void BuildWalls()
     {
